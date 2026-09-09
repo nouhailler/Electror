@@ -1,0 +1,21 @@
+{
+  "name": "Wattwise — Electricity Price Planner",
+  "short_name": "Wattwise",
+  "description": "Trouvez le meilleur moment pour consommer selon les prévisions du prix de l’électricité.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f5f7f1",
+  "theme_color": "#c8f04b",
+  "categories": ["utilities", "finance"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

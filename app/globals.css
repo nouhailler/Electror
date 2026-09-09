@@ -1,0 +1,78 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-accent-blue: var(--accent-blue);
+  --color-ink: var(--ink);
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  --background: #f5f7f1;
+  --foreground: #142018;
+  --card: #ffffff;
+  --muted: #eef1eb;
+  --muted-foreground: #68736c;
+  --border: #dfe5de;
+  --primary: #c8f04b;
+  --primary-foreground: #142018;
+  --success: #5ee595;
+  --danger: #f06d5f;
+  --warning: #d99a2b;
+  --accent-blue: #55b9e9;
+  --ink: #17241c;
+  --brand-glow: rgb(180 224 58 / 0.28);
+  --success-glow: rgb(94 229 149 / 0.12);
+  --hero-shadow: rgb(28 52 34 / 0.18);
+  --card-shadow: rgb(33 54 40 / 0.05);
+  --chart-line: #58a8a2;
+  --price-very-cheap: #20a96b;
+  --price-cheap: #73bd65;
+  --price-average: #d99a2b;
+  --price-expensive: #e8794d;
+  --price-very-expensive: #df4f50;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #101712;
+  --foreground: #eff6ed;
+  --card: #172019;
+  --muted: #222c24;
+  --muted-foreground: #9aa69e;
+  --border: #2c3930;
+  --primary: #c8f04b;
+  --primary-foreground: #142018;
+  --ink: #0b100d;
+  --warning: #f0b84a;
+  --hero-shadow: rgb(0 0 0 / 0.3);
+  --card-shadow: rgb(0 0 0 / 0.14);
+  --chart-line: #76c8bd;
+  --price-very-cheap: #61d49a;
+  --price-cheap: #9bd777;
+  --price-average: #f0b84a;
+  --price-expensive: #f49368;
+  --price-very-expensive: #fa7373;
+}
+
+@layer base {
+  * { @apply border-border; }
+  html { @apply scroll-smooth font-sans; }
+  body { @apply m-0 bg-background text-foreground; }
+  button, select, a { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 3px solid color-mix(in srgb, var(--primary), transparent 20%); outline-offset: 3px; }
+}
