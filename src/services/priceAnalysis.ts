@@ -75,39 +75,56 @@ export function findBestWindow(
   overallAverage?: number,
 ): PriceWindow | null {
   if (points.length === 0 || durationMinutes <= 0) return null;
-  const intervalMinutes = inferIntervalMinutes(points);
-  const slotCount = Math.max(1, Math.ceil(durationMinutes / intervalMinutes));
-  if (slotCount > points.length) return null;
-
-  let best: PricePoint[] | null = null;
+  const orderedPoints = [...points].sort(
+    (left, right) => Date.parse(left.datetime) - Date.parse(right.datetime),
+  );
+  const intervalMinutes = inferIntervalMinutes(orderedPoints);
+  let best: { points: PricePoint[]; start: string } | null = null;
   let bestAverage = Number.POSITIVE_INFINITY;
 
-  for (let index = 0; index <= points.length - slotCount; index += 1) {
-    const slice = points.slice(index, index + slotCount);
-    const isContiguous = slice.slice(1).every((point, sliceIndex) => {
-      const gap = Date.parse(point.datetime) - Date.parse(slice[sliceIndex].datetime);
-      return gap <= intervalMinutes * 60_000 * 1.5;
-    });
-    if (!isContiguous) continue;
+  for (let startIndex = 0; startIndex < orderedPoints.length; startIndex += 1) {
+    const slice: PricePoint[] = [];
+    let weightedPrice = 0;
+    let remainingMinutes = durationMinutes;
 
-    const average = slice.reduce((sum, point) => sum + point.price, 0) / slice.length;
+    for (
+      let pointIndex = startIndex;
+      pointIndex < orderedPoints.length && remainingMinutes > 0;
+      pointIndex += 1
+    ) {
+      const point = orderedPoints[pointIndex];
+      if (pointIndex > startIndex) {
+        const previous = orderedPoints[pointIndex - 1];
+        const gapMinutes =
+          (Date.parse(point.datetime) - Date.parse(previous.datetime)) / 60_000;
+        if (gapMinutes > intervalMinutes * 1.5) break;
+      }
+
+      const coveredMinutes = Math.min(intervalMinutes, remainingMinutes);
+      slice.push(point);
+      weightedPrice += point.price * coveredMinutes;
+      remainingMinutes -= coveredMinutes;
+    }
+
+    if (remainingMinutes > 0) continue;
+    const average = weightedPrice / durationMinutes;
     if (average < bestAverage) {
       bestAverage = average;
-      best = slice;
+      best = { points: slice, start: orderedPoints[startIndex].datetime };
     }
   }
 
   if (!best) return null;
   const baseline = overallAverage ?? calculateStatistics(points)?.average ?? bestAverage;
   const savingsPerMWh = Math.max(0, baseline - bestAverage);
-  const end = new Date(Date.parse(best[best.length - 1].datetime) + intervalMinutes * 60_000);
+  const end = new Date(Date.parse(best.start) + durationMinutes * 60_000);
 
   return {
-    start: best[0].datetime,
+    start: best.start,
     end: end.toISOString(),
     durationMinutes,
     averagePrice: bestAverage,
-    maximumPrice: Math.max(...best.map((point) => point.price)),
+    maximumPrice: Math.max(...best.points.map((point) => point.price)),
     savingsPerMWh,
     savingsPercent: baseline === 0 ? 0 : (savingsPerMWh / Math.abs(baseline)) * 100,
   };

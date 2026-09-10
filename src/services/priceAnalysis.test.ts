@@ -27,6 +27,13 @@ describe('priceAnalysis', () => {
     expect(window?.savingsPerMWh).toBe(17.5);
   });
 
+  it('pondère précisément une durée qui traverse deux heures', () => {
+    const window = findBestWindow(points, 90, 87.5);
+    expect(window?.start).toBe('2030-01-01T00:00:00.000Z');
+    expect(window?.end).toBe('2030-01-01T01:30:00.000Z');
+    expect(window?.averagePrice).toBeCloseTo(76.6667);
+  });
+
   it('trouve le prochain pic parmi les données futures', () => {
     const peak = findNextPeak(points, Date.parse('2030-01-01T00:00:00.000Z'));
     expect(peak?.datetime).toBe('2030-01-01T02:00:00.000Z');

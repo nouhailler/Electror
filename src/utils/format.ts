@@ -2,6 +2,26 @@ export function formatPrice(value: number): string {
   return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(value);
 }
 
+export function formatDecimal(value: number, maximumFractionDigits = 2): string {
+  return new Intl.NumberFormat('fr-FR', { maximumFractionDigits }).format(value);
+}
+
+export function formatCurrency(value: number, currency: string): string {
+  if (!/^[A-Z]{3}$/.test(currency)) return `${formatDecimal(value)} ${currency}`;
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: value < 1 ? 3 : 2,
+  }).format(value);
+}
+
+export function formatDuration(durationMinutes: number): string {
+  if (durationMinutes < 60) return `${durationMinutes} min`;
+  const hours = Math.floor(durationMinutes / 60);
+  const minutes = durationMinutes % 60;
+  return minutes === 0 ? `${hours} h` : `${hours} h ${minutes}`;
+}
+
 export function formatHour(datetime: string): string {
   return new Intl.DateTimeFormat('fr-FR', {
     hour: '2-digit',

@@ -11,8 +11,8 @@
     <img alt="React 19" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=082032" />
     <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white" />
     <img alt="PWA" src="https://img.shields.io/badge/PWA-installable-C8F04B?logo=pwa&logoColor=17241C" />
-    <img alt="Tests" src="https://img.shields.io/badge/tests-8%20passed-20A96B" />
-    <img alt="Version" src="https://img.shields.io/badge/version-0.1-F0B84A" />
+    <img alt="Tests" src="https://img.shields.io/badge/tests-12%20passed-20A96B" />
+    <img alt="Version" src="https://img.shields.io/badge/version-0.2-C8F04B" />
   </p>
 </div>
 
@@ -54,11 +54,15 @@ L’application récupère les prévisions *day-ahead* d’[Electricity Maps](ht
 | ✅ **Période avantageuse** | Le prochain ensemble d’heures relativement bon marché |
 | ⚠️ **Prochain pic** | Le prochain moment où le prix devient particulièrement élevé |
 | 💰 **Économie potentielle** | L’écart entre le meilleur créneau et le prix moyen |
+| 🔌 **Planificateur d’appareil** | Le créneau et le coût estimé d’un cycle complet |
 
 ## ✨ Fonctionnalités
 
 - 🌍 **Six zones européennes** : France, Allemagne, Belgique, Espagne, Italie du Nord et Pays-Bas
 - 🕐 **Prévisions 24 h, 48 h et 72 h** lorsque le plan API les autorise
+- 🔌 **Planification d’appareils** : lave-linge, lave-vaisselle, sèche-linge, chauffe-eau, voiture électrique ou profil libre
+- ⏱️ **Durée personnalisable** de 30 minutes à 8 heures, avec prise en compte des tranches horaires traversées
+- 💶 **Coût énergie estimé** selon la puissance de l’appareil, avec comparaison au prix moyen
 - 📊 **Graphique tactile et responsive** avec tooltip, quintiles et repères statistiques
 - 🎨 **Classification relative** : très bon marché, bon marché, moyen, cher et très cher
 - 🌗 **Thèmes système, clair et sombre**
@@ -72,10 +76,10 @@ L’application récupère les prévisions *day-ahead* d’[Electricity Maps](ht
 
 ```mermaid
 flowchart LR
-  A[🌍 Choisir une zone] --> B[🕐 Choisir 24, 48 ou 72 h]
-  B --> C[⚡ Charger les prévisions]
-  C --> D[📊 Calculer les statistiques]
-  D --> E[🟢 Recommander le meilleur créneau]
+  A[🌍 Choisir une zone] --> B[🔌 Choisir un appareil]
+  B --> C[⏱️ Régler durée et puissance]
+  C --> D[⚡ Charger les prévisions]
+  D --> E[🟢 Planifier le cycle complet]
   D --> F[⚠️ Signaler le prochain pic]
 ```
 
@@ -95,7 +99,10 @@ Très bon marché → Bon marché → Moyen → Cher → Très cher
 Meilleur créneau + prochaines périodes + prochain pic
 ```
 
-Le meilleur créneau minimise le prix moyen d’une fenêtre contiguë. La V0.1 utilise une durée d’une heure, mais le moteur accepte déjà d’autres durées.
+Le meilleur créneau minimise le prix moyen pondéré d’une fenêtre contiguë. Le planificateur accepte des cycles de 30 minutes à 8 heures et calcule précisément les portions d’heures traversées. La puissance sert ensuite à estimer l’énergie consommée, le coût au prix de gros et l’économie par rapport au prix moyen de la période.
+
+> [!NOTE]
+> Cette estimation ne représente que la composante énergie au prix de gros. Elle n’inclut ni les taxes, ni le réseau, ni les conditions du contrat d’électricité.
 
 ## 🚀 Installation
 
@@ -174,9 +181,9 @@ app/
 src/
 ├── api/                        # Client de la route interne
 ├── components/                 # Dashboard, graphique et skeleton
-├── config/                     # Noms des zones ↔ identifiants API
-├── hooks/                      # Chargement, cache et états d’interface
-├── services/                   # Mapper et logique métier testable
+├── config/                     # Zones API et préréglages d’appareils
+├── hooks/                      # Chargement, cache et préférences locales
+├── services/                   # Mapper, analyse et estimation de consommation
 ├── test/fixtures/              # Réponses réalistes sans appel réseau
 ├── types/                      # Modèles API et métier
 └── utils/                      # Formatage localisé
@@ -225,6 +232,8 @@ Les tests couvrent notamment :
 - les réponses vides ou incomplètes ;
 - le minimum, le maximum et la moyenne ;
 - le meilleur créneau paramétrable ;
+- les durées traversant partiellement plusieurs heures ;
+- le coût et l’économie estimés d’un cycle d’appareil ;
 - le prochain pic ;
 - la classification relative des prix.
 
@@ -245,26 +254,28 @@ Navigateur                       Serveur                      Electricity Maps
 - les erreurs amont sont transformées en messages compréhensibles ;
 - le proxy applique une validation des zones, un timeout et une limitation naturelle par cache.
 
-## ⚠️ Limites de la V0.1
+## ⚠️ Limites de la V0.2
 
 - l’accès dépend du plan et de la durée de validité de la clé Electricity Maps ;
 - les horizons 48/72 h peuvent dépendre des droits du plan ;
 - l’Italie utilise la zone de marché `IT-NO` ;
 - l’unité est affichée telle que fournie par l’API, sans conversion ;
 - les prix *day-ahead* ne correspondent pas nécessairement au tarif final facturé ;
+- les puissances des appareils sont des préréglages modifiables, pas des mesures réelles ;
+- le planificateur estime la composante énergie et non la facture complète ;
 - aucune donnée simulée n’est présentée lorsque l’API est indisponible.
 
-## 🗺️ Pistes pour la V0.2
+## 🗺️ Pistes pour la V0.3
 
-- durée de consommation personnalisable ;
 - alertes de prix et notifications PWA ;
 - comparaison de plusieurs zones ;
 - historique et comparaison prévisions/réalité ;
-- planification d’appareils ou de recharge électrique.
+- heure limite de fin et calendrier des cycles planifiés ;
+- suivi détaillé de recharge électrique.
 
 ---
 
 <div align="center">
-  <strong>Wattwise V0.1</strong><br />
+  <strong>Wattwise V0.2</strong><br />
   Prévisions fournies par Electricity Maps — les prix affichés ne sont pas des tarifs contractuels.
 </div>

@@ -7,14 +7,14 @@ const geist = Geist({ variable: '--font-geist', subsets: ['latin'] });
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
   title: 'Wattwise — Planifiez votre consommation',
-  description: 'Prévisions simples et lisibles du prix de l’électricité en Europe.',
+  description: 'Planifiez vos appareils selon les prévisions du prix de l’électricité en Europe.',
   applicationName: 'Wattwise',
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, title: 'Wattwise', statusBarStyle: 'black-translucent' },
   icons: { icon: '/icon.svg', apple: '/icon.svg' },
   openGraph: {
     title: 'Wattwise',
-    description: 'Consommez au bon moment.',
+    description: 'Planifiez vos appareils et consommez au bon moment.',
     type: 'website',
     locale: 'fr_FR',
     images: [{ url: '/og.png', width: 1730, height: 909, alt: 'Wattwise — Consommez au bon moment.' }],
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Wattwise',
-    description: 'Consommez au bon moment.',
+    description: 'Planifiez vos appareils et consommez au bon moment.',
     images: ['/og.png'],
   },
 };

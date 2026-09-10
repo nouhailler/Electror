@@ -12,6 +12,7 @@ import {
   CloudOff,
   Home,
   Moon,
+  PlugZap,
   RefreshCw,
   Settings,
   Sun,
@@ -20,10 +21,13 @@ import {
   Zap,
 } from 'lucide-react';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { ConsumptionPlanner } from '@/src/components/ConsumptionPlanner';
 import { ForecastSkeleton } from '@/src/components/ForecastSkeleton';
 import { PriceChart } from '@/src/components/PriceChart';
+import { getAppliance } from '@/src/config/appliances';
 import { getZone, ZONES, type ZoneId } from '@/src/config/zones';
 import { useForecast } from '@/src/hooks/useForecast';
+import { usePlannerPreferences } from '@/src/hooks/usePlannerPreferences';
 import { analyzeForecast } from '@/src/services/priceAnalysis';
 import type { HorizonHours } from '@/src/types/electricity';
 import { formatDateTime, formatHour, formatPeriod, formatPrice, formatShortDate, relativeUpdateTime } from '@/src/utils/format';
@@ -79,11 +83,15 @@ export function Dashboard() {
   const [horizon, setHorizon] = useState<HorizonHours>(24);
   const [theme, setTheme] = useState<ThemeMode>('system');
   const [online, setOnline] = useState(true);
+  const planner = usePlannerPreferences();
   const forecastState = useForecast(zoneId, horizon);
   const zone = getZone(zoneId);
+  const selectedAppliance = getAppliance(planner.preferences.applianceId);
   const analysis = useMemo(
-    () => forecastState.forecast ? analyzeForecast(forecastState.forecast.points) : null,
-    [forecastState.forecast],
+    () => forecastState.forecast
+      ? analyzeForecast(forecastState.forecast.points, planner.preferences.durationMinutes)
+      : null,
+    [forecastState.forecast, planner.preferences.durationMinutes],
   );
 
   useEffect(() => {
@@ -207,8 +215,13 @@ export function Dashboard() {
                     </p>
                     {analysis.bestWindow ? (
                       <>
-                        <h2 className="max-w-2xl text-3xl font-black tracking-[-0.045em] sm:text-5xl">Le meilleur moment commence à <span className="text-primary">{formatHour(analysis.bestWindow.start)}</span></h2>
-                        <p className="mt-3 max-w-xl text-sm leading-6 text-white/65 sm:text-base">Consommez entre {formatPeriod(analysis.bestWindow.start, analysis.bestWindow.end)}. Créneau analysé : {analysis.bestWindow.durationMinutes} minutes.</p>
+                        <h2 className="max-w-2xl text-3xl font-black tracking-[-0.045em] sm:text-5xl">
+                          Pour {selectedAppliance.name.toLocaleLowerCase('fr-FR')}, commencez à{' '}
+                          <span className="text-primary">{formatHour(analysis.bestWindow.start)}</span>
+                        </h2>
+                        <p className="mt-3 max-w-xl text-sm leading-6 text-white/65 sm:text-base">
+                          Consommez entre {formatPeriod(analysis.bestWindow.start, analysis.bestWindow.end)}. Le planificateur tient compte de la durée complète du cycle.
+                        </p>
                       </>
                     ) : <h2 className="text-3xl font-black">Pas assez de données pour calculer un créneau.</h2>}
                   </div>
@@ -222,6 +235,17 @@ export function Dashboard() {
                   )}
                 </div>
               </section>
+
+              <ConsumptionPlanner
+                preferences={planner.preferences}
+                bestWindow={analysis.bestWindow}
+                referencePrice={analysis.statistics.average}
+                unit={forecast.unit}
+                onApplianceChange={planner.setApplianceId}
+                onDurationChange={planner.setDurationMinutes}
+                onPowerChange={planner.setPowerKw}
+                onPowerBlur={planner.normalizePower}
+              />
 
               <section className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label="Statistiques des prix">
                 <StatCard label="Minimum" value={`${formatPrice(analysis.statistics.minimum.price)}`} note={`${forecast.unit} · ${formatHour(analysis.statistics.minimum.datetime)}`} icon={ArrowDownRight} tone="text-success" />
@@ -303,6 +327,7 @@ export function Dashboard() {
           {[
             ['Accueil', '#accueil', Home],
             ['Prix', '#prix', BarChart3],
+            ['Planifier', '#planifier', PlugZap],
             ['Prévisions', '#prévisions', TrendingUp],
             ['Paramètres', '#paramètres', Settings],
           ].map(([label, href, Icon]) => (

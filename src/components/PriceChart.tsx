@@ -32,13 +32,21 @@ interface TooltipEntry {
   };
 }
 
-function PriceTooltip({ active, payload }: { active?: boolean; payload?: TooltipEntry[] }) {
+function PriceTooltip({
+  active,
+  payload,
+  unit,
+}: {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  unit: string;
+}) {
   const point = payload?.[0]?.payload;
   if (!active || !point) return null;
   return (
     <div className="min-w-44 rounded-2xl border border-border bg-card p-3 text-foreground shadow-2xl">
       <p className="text-xs font-semibold text-muted-foreground">{formatDateTime(point.datetime)}</p>
-      <p className="mt-1 text-xl font-black">{formatPrice(point.price)} <span className="text-xs font-semibold text-muted-foreground">€/MWh</span></p>
+      <p className="mt-1 text-xl font-black">{formatPrice(point.price)} <span className="text-xs font-semibold text-muted-foreground">{unit}</span></p>
       <p className="mt-2 text-xs font-bold" style={{ color: CATEGORY_COLORS[point.category] }}>{getCategoryLabel(point.category)}</p>
     </div>
   );
@@ -84,7 +92,7 @@ export function PriceChart({ points, statistics, unit }: PriceChartProps) {
             domain={[Math.floor(dataMin - padding), Math.ceil(dataMax + padding)]}
             tickFormatter={(value: number) => formatPrice(value)}
           />
-          <Tooltip content={<PriceTooltip />} cursor={{ stroke: 'var(--foreground)', strokeDasharray: '3 4', strokeOpacity: 0.35 }} />
+          <Tooltip content={<PriceTooltip unit={unit} />} cursor={{ stroke: 'var(--foreground)', strokeDasharray: '3 4', strokeOpacity: 0.35 }} />
           <ReferenceLine y={statistics.minimum.price} stroke="var(--price-very-cheap)" strokeDasharray="2 6" strokeOpacity={0.45} />
           <ReferenceLine y={statistics.average} stroke="var(--price-average)" strokeDasharray="5 5" strokeOpacity={0.65} />
           <ReferenceLine y={statistics.maximum.price} stroke="var(--price-very-expensive)" strokeDasharray="2 6" strokeOpacity={0.45} />

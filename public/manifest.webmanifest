@@ -1,7 +1,7 @@
 {
   "name": "Wattwise — Electricity Price Planner",
   "short_name": "Wattwise",
-  "description": "Trouvez le meilleur moment pour consommer selon les prévisions du prix de l’électricité.",
+  "description": "Planifiez vos appareils au meilleur moment selon les prévisions du prix de l’électricité.",
   "lang": "fr",
   "start_url": "/",
   "scope": "/",
