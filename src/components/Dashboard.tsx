@@ -5,12 +5,13 @@ import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
-  BarChart3,
   BatteryCharging,
+  Bell,
   CheckCircle2,
   Clock3,
   CloudOff,
   Home,
+  Leaf,
   Moon,
   PlugZap,
   RefreshCw,
@@ -21,14 +22,18 @@ import {
   Zap,
 } from 'lucide-react';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { AlertCenter } from '@/src/components/AlertCenter';
 import { ConsumptionPlanner } from '@/src/components/ConsumptionPlanner';
+import { EnergyInsights } from '@/src/components/EnergyInsights';
 import { ForecastSkeleton } from '@/src/components/ForecastSkeleton';
 import { PriceChart } from '@/src/components/PriceChart';
 import { getAppliance } from '@/src/config/appliances';
 import { getZone, ZONES, type ZoneId } from '@/src/config/zones';
 import { useForecast } from '@/src/hooks/useForecast';
+import { useEnergyAlerts } from '@/src/hooks/useEnergyAlerts';
 import { usePlannerPreferences } from '@/src/hooks/usePlannerPreferences';
 import { analyzeForecast } from '@/src/services/priceAnalysis';
+import { findOptimizedWindow } from '@/src/services/smartOptimizer';
 import type { HorizonHours } from '@/src/types/electricity';
 import { formatDateTime, formatHour, formatPeriod, formatPrice, formatShortDate, relativeUpdateTime } from '@/src/utils/format';
 
@@ -85,6 +90,7 @@ export function Dashboard() {
   const [online, setOnline] = useState(true);
   const planner = usePlannerPreferences();
   const forecastState = useForecast(zoneId, horizon);
+  const alertState = useEnergyAlerts(forecastState.data);
   const zone = getZone(zoneId);
   const selectedAppliance = getAppliance(planner.preferences.applianceId);
   const analysis = useMemo(
@@ -92,6 +98,17 @@ export function Dashboard() {
       ? analyzeForecast(forecastState.forecast.points, planner.preferences.durationMinutes)
       : null,
     [forecastState.forecast, planner.preferences.durationMinutes],
+  );
+  const optimizedWindow = useMemo(
+    () => forecastState.data
+      ? findOptimizedWindow(
+          forecastState.data.forecast.points,
+          forecastState.data.carbon,
+          forecastState.data.renewable,
+          planner.preferences,
+        )
+      : null,
+    [forecastState.data, planner.preferences],
   );
 
   useEffect(() => {
@@ -169,7 +186,7 @@ export function Dashboard() {
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Prix de l’électricité</p>
-              <h1 className="max-w-2xl text-3xl font-black tracking-[-0.045em] sm:text-4xl">Quand consommer au meilleur prix ?</h1>
+              <h1 className="max-w-3xl text-3xl font-black tracking-[-0.045em] sm:text-4xl">Quand consommer au meilleur prix et au plus faible impact ?</h1>
             </div>
             <label className="hidden sm:block">
               <span className="sr-only">Zone</span>
@@ -205,6 +222,13 @@ export function Dashboard() {
                 </output>
               )}
 
+              {forecastState.data && forecastState.data.unavailableSignals.length > 0 && (
+                <output className="mb-4 flex items-start gap-3 rounded-2xl border border-accent-blue/25 bg-accent-blue/8 p-4 text-left text-sm">
+                  <CloudOff className="mt-0.5 size-5 shrink-0 text-accent-blue" aria-hidden />
+                  <p><strong>Analyse partielle.</strong> Certains signaux énergétiques sont momentanément indisponibles : {forecastState.data.unavailableSignals.join(', ')}. L’optimisation continue avec les données accessibles.</p>
+                </output>
+              )}
+
               <section id="prix" className="relative scroll-mt-24 overflow-hidden rounded-[2rem] bg-ink p-6 text-white shadow-[0_24px_64px_var(--hero-shadow)] sm:p-8">
                 <div className="absolute -right-12 -top-12 size-44 rounded-full bg-primary/25 blur-2xl" aria-hidden />
                 <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
@@ -213,24 +237,27 @@ export function Dashboard() {
                       <span className="size-2 rounded-full bg-success shadow-[0_0_0_5px_var(--success-glow)]" />
                       {formatShortDate(forecast.points[0].datetime)} · {zone.name}
                     </p>
-                    {analysis.bestWindow ? (
+                    {optimizedWindow ? (
                       <>
                         <h2 className="max-w-2xl text-3xl font-black tracking-[-0.045em] sm:text-5xl">
                           Pour {selectedAppliance.name.toLocaleLowerCase('fr-FR')}, commencez à{' '}
-                          <span className="text-primary">{formatHour(analysis.bestWindow.start)}</span>
+                          <span className="text-primary">{formatHour(optimizedWindow.start)}</span>
                         </h2>
                         <p className="mt-3 max-w-xl text-sm leading-6 text-white/65 sm:text-base">
-                          Consommez entre {formatPeriod(analysis.bestWindow.start, analysis.bestWindow.end)}. Le planificateur tient compte de la durée complète du cycle.
+                          Consommez entre {formatPeriod(optimizedWindow.start, optimizedWindow.end)}. Le planificateur tient compte du prix, de l’impact carbone et de toutes vos contraintes.
                         </p>
                       </>
                     ) : <h2 className="text-3xl font-black">Pas assez de données pour calculer un créneau.</h2>}
                   </div>
-                  {analysis.bestWindow && (
+                  {optimizedWindow && (
                     <div className="rounded-3xl border border-white/10 bg-white/7 p-5 backdrop-blur-sm">
                       <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/50">Prix moyen du créneau</p>
-                      <p className="mt-2 text-4xl font-black tracking-tight">{formatPrice(analysis.bestWindow.averagePrice)} <span className="text-base font-semibold text-white/55">{forecast.unit}</span></p>
-                      <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-success/15 px-3 py-1.5 text-xs font-bold text-success"><ArrowDownRight className="size-4" aria-hidden /> {formatPrice(analysis.bestWindow.savingsPercent)} % sous la moyenne</p>
-                      <p className="mt-2 text-xs text-white/50">Maximum du créneau : {formatPrice(analysis.bestWindow.maximumPrice)} {forecast.unit}</p>
+                      <p className="mt-2 text-4xl font-black tracking-tight">{formatPrice(optimizedWindow.averagePrice)} <span className="text-base font-semibold text-white/55">{forecast.unit}</span></p>
+                      <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-success/15 px-3 py-1.5 text-xs font-bold text-success"><ArrowDownRight className="size-4" aria-hidden /> {formatPrice(optimizedWindow.savingsPercent)} % sous la moyenne</p>
+                      <p className="mt-2 text-xs text-white/50">
+                        {optimizedWindow.averageCarbon === null ? 'Carbone indisponible' : `${formatPrice(optimizedWindow.averageCarbon)} gCO₂e/kWh`}
+                        {optimizedWindow.averageRenewable === null ? '' : ` · ${formatPrice(optimizedWindow.averageRenewable)} % renouvelable`}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -238,13 +265,14 @@ export function Dashboard() {
 
               <ConsumptionPlanner
                 preferences={planner.preferences}
-                bestWindow={analysis.bestWindow}
+                bestWindow={optimizedWindow}
                 referencePrice={analysis.statistics.average}
                 unit={forecast.unit}
                 onApplianceChange={planner.setApplianceId}
                 onDurationChange={planner.setDurationMinutes}
                 onPowerChange={planner.setPowerKw}
                 onPowerBlur={planner.normalizePower}
+                onPreferencesChange={planner.updatePreferences}
               />
 
               <section className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label="Statistiques des prix">
@@ -286,9 +314,26 @@ export function Dashboard() {
                     <button onClick={forecastState.refresh} className="grid size-11 place-items-center rounded-xl border border-border text-muted-foreground transition hover:text-foreground" aria-label="Actualiser les prévisions"><RefreshCw className="size-4" aria-hidden /></button>
                   </div>
                 </div>
-                <PriceChart points={forecast.points} statistics={analysis.statistics} unit={forecast.unit} />
-                <p className="mt-5 text-center text-xs text-muted-foreground">Mis à jour {relativeUpdateTime(forecast.fetchedAt)} · source Electricity Maps · prévisions, non tarifs facturés</p>
+                <PriceChart
+                  points={forecast.points}
+                  statistics={analysis.statistics}
+                  unit={forecast.unit}
+                  carbon={forecastState.data?.carbon ?? null}
+                  renewable={forecastState.data?.renewable ?? null}
+                  bestWindow={optimizedWindow}
+                />
+                <p className="mt-5 text-center text-xs text-muted-foreground">Mis à jour {relativeUpdateTime(forecast.fetchedAt)} · source Electricity Maps · prix publiés et prévus, non tarifs facturés</p>
               </section>
+
+              {forecastState.data && <EnergyInsights data={forecastState.data} bestWindow={optimizedWindow} />}
+
+              <AlertCenter
+                preferences={alertState.preferences}
+                alerts={alertState.alerts}
+                permission={alertState.permission}
+                onUpdate={alertState.updatePreferences}
+                onRequestPermission={alertState.requestPermission}
+              />
             </>
           )}
         </section>
@@ -326,10 +371,10 @@ export function Dashboard() {
         <div className="mx-auto flex max-w-md justify-around">
           {[
             ['Accueil', '#accueil', Home],
-            ['Prix', '#prix', BarChart3],
             ['Planifier', '#planifier', PlugZap],
             ['Prévisions', '#prévisions', TrendingUp],
-            ['Paramètres', '#paramètres', Settings],
+            ['Impact', '#impact', Leaf],
+            ['Alertes', '#alertes', Bell],
           ].map(([label, href, Icon]) => (
             <a key={String(label)} href={String(href)} className="flex min-h-12 min-w-16 flex-col items-center justify-center gap-1 rounded-xl px-2 text-[10px] font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground">
               <Icon className="size-4" aria-hidden />{String(label)}

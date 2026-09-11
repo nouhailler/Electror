@@ -11,8 +11,8 @@
     <img alt="React 19" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=082032" />
     <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white" />
     <img alt="PWA" src="https://img.shields.io/badge/PWA-installable-C8F04B?logo=pwa&logoColor=17241C" />
-    <img alt="Tests" src="https://img.shields.io/badge/tests-12%20passed-20A96B" />
-    <img alt="Version" src="https://img.shields.io/badge/version-0.2-C8F04B" />
+    <img alt="Tests" src="https://img.shields.io/badge/tests-21%20passed-20A96B" />
+    <img alt="Version" src="https://img.shields.io/badge/version-0.3-C8F04B" />
   </p>
 </div>
 
@@ -41,7 +41,7 @@
 
 Wattwise répond à une question concrète :
 
-> **Quand est-il préférable de consommer de l’électricité ?**
+> **Quand consommer au meilleur prix et au plus faible impact ?**
 
 L’application récupère les prévisions *day-ahead* d’[Electricity Maps](https://www.electricitymaps.com/), les analyse, puis présente l’information importante sans jargon :
 
@@ -55,14 +55,23 @@ L’application récupère les prévisions *day-ahead* d’[Electricity Maps](ht
 | ⚠️ **Prochain pic** | Le prochain moment où le prix devient particulièrement élevé |
 | 💰 **Économie potentielle** | L’écart entre le meilleur créneau et le prix moyen |
 | 🔌 **Planificateur d’appareil** | Le créneau et le coût estimé d’un cycle complet |
+| 🌿 **Impact énergétique** | L’intensité carbone, la part renouvelable et le mix du créneau |
+| 🔔 **Alertes** | Le prochain moment où vos seuils prix, carbone ou renouvelables sont atteints |
 
 ## ✨ Fonctionnalités
 
 - 🌍 **Six zones européennes** : France, Allemagne, Belgique, Espagne, Italie du Nord et Pays-Bas
-- 🕐 **Prévisions 24 h, 48 h et 72 h** lorsque le plan API les autorise
+- 🕐 **Prix publiés et prévus sur 24 h, 48 h et 72 h** lorsque le plan API les autorise
+- ⚖️ **Trois modes d’optimisation** : économique, écologique ou équilibré avec pondération réglable
+- 🌿 **Signaux carbone et renouvelables** superposables au graphique des prix
+- 🧬 **Mix électrique expliqué** au début du créneau recommandé, avec flux import/export
 - 🔌 **Planification d’appareils** : lave-linge, lave-vaisselle, sèche-linge, chauffe-eau, voiture électrique ou profil libre
-- ⏱️ **Durée personnalisable** de 30 minutes à 8 heures, avec prise en compte des tranches horaires traversées
-- 💶 **Coût énergie estimé** selon la puissance de l’appareil, avec comparaison au prix moyen
+- ⏱️ **Contraintes réalistes** : début au plus tôt, fin au plus tard, heures silencieuses et puissance maximale du logement
+- 🚗 **Recharge électrique par objectif batterie** : capacité, niveau actuel et niveau cible
+- 💶 **Coût et empreinte carbone estimés** selon la puissance et la durée, avec comparaison au prix moyen
+- 📜 **Historique des prix sur 24 h** et distinction visuelle entre valeurs publiées et prévisions modélisées
+- 🎯 **Qualité des prévisions mesurée localement** par erreur absolue moyenne et biais dès que des valeurs publiées sont disponibles
+- 🔔 **Alertes prix, carbone et renouvelables** avec seuils, anticipation et notifications PWA
 - 📊 **Graphique tactile et responsive** avec tooltip, quintiles et repères statistiques
 - 🎨 **Classification relative** : très bon marché, bon marché, moyen, cher et très cher
 - 🌗 **Thèmes système, clair et sombre**
@@ -76,14 +85,14 @@ L’application récupère les prévisions *day-ahead* d’[Electricity Maps](ht
 
 ```mermaid
 flowchart LR
-  A[🌍 Choisir une zone] --> B[🔌 Choisir un appareil]
-  B --> C[⏱️ Régler durée et puissance]
-  C --> D[⚡ Charger les prévisions]
+  A[🌍 Choisir une zone] --> B[⚖️ Choisir prix, carbone ou équilibre]
+  B --> C[🔌 Régler appareil et contraintes]
+  C --> D[⚡ Croiser les cinq flux API]
   D --> E[🟢 Planifier le cycle complet]
-  D --> F[⚠️ Signaler le prochain pic]
+  D --> F[🔔 Surveiller les seuils]
 ```
 
-La navigation tient sur un seul écran logique : **Accueil**, **Prix**, **Prévisions** et **Paramètres** sont accessibles depuis la barre inférieure.
+La barre inférieure donne un accès direct à **Accueil**, **Planifier**, **Prévisions**, **Impact** et **Alertes**. Les préférences générales restent disponibles en bas du tableau de bord.
 
 ## 🧠 Comment les recommandations sont calculées
 
@@ -99,7 +108,7 @@ Très bon marché → Bon marché → Moyen → Cher → Très cher
 Meilleur créneau + prochaines périodes + prochain pic
 ```
 
-Le meilleur créneau minimise le prix moyen pondéré d’une fenêtre contiguë. Le planificateur accepte des cycles de 30 minutes à 8 heures et calcule précisément les portions d’heures traversées. La puissance sert ensuite à estimer l’énergie consommée, le coût au prix de gros et l’économie par rapport au prix moyen de la période.
+L’optimiseur construit les fenêtres contiguës compatibles avec la durée, les bornes horaires, les heures silencieuses et la puissance du logement. Il normalise ensuite prix et carbone sur la période : le mode économique minimise le prix, le mode écologique minimise l’intensité carbone et le mode équilibré applique la pondération choisie. La puissance sert enfin à estimer l’énergie, le coût, l’économie et les émissions du cycle.
 
 > [!NOTE]
 > Cette estimation ne représente que la composante énergie au prix de gros. Elle n’inclut ni les taxes, ni le réseau, ni les conditions du contrat d’électricité.
@@ -155,12 +164,20 @@ Le service worker conserve l’enveloppe de l’application et les ressources st
 
 ## 🔌 API Electricity Maps
 
-La route serveur interne appelle exclusivement l’endpoint V4 officiel :
+La route serveur interne regroupe cinq endpoints V4 officiels :
 
 ```http
-GET https://api.electricitymaps.com/v4/price-day-ahead/forecast
+GET https://api.electricitymaps.com/v4/price-day-ahead/combined
 auth-token: <clé côté serveur>
 ```
+
+| Flux | Endpoint |
+| --- | --- |
+| Prix publiés + prévus | `price-day-ahead/combined` |
+| Intensité carbone | `carbon-intensity/forecast` |
+| Part renouvelable | `renewable-energy/forecast` |
+| Mix électrique | `electricity-mix/forecast` |
+| Historique des prix | `price-day-ahead/history` |
 
 | Paramètre | Valeur utilisée |
 | --- | --- |
@@ -201,8 +218,11 @@ flowchart TD
   CLIENT --> PROXY[/api/forecast]
   PROXY --> SERVER[(Cache serveur 15 min)]
   PROXY --> MAPS[⚡ Electricity Maps]
-  HOOK --> ANALYSIS[Analyse métier]
+  HOOK --> ANALYSIS[Optimiseur prix + carbone]
+  HOOK --> ARCHIVE[(Historique local)]
+  ANALYSIS --> ALERTS[Alertes et notifications]
   ANALYSIS --> UI
+  ALERTS --> UI
 ```
 
 ## 🧰 Stack technique
@@ -234,6 +254,11 @@ Les tests couvrent notamment :
 - le meilleur créneau paramétrable ;
 - les durées traversant partiellement plusieurs heures ;
 - le coût et l’économie estimés d’un cycle d’appareil ;
+- l’empreinte carbone estimée ;
+- les modes d’optimisation et les contraintes horaires ;
+- le regroupement des cinq flux Electricity Maps ;
+- la qualité des prévisions comparée aux prix publiés ;
+- les seuils d’alertes prix, carbone et renouvelables ;
 - le prochain pic ;
 - la classification relative des prix.
 
@@ -254,7 +279,7 @@ Navigateur                       Serveur                      Electricity Maps
 - les erreurs amont sont transformées en messages compréhensibles ;
 - le proxy applique une validation des zones, un timeout et une limitation naturelle par cache.
 
-## ⚠️ Limites de la V0.2
+## ⚠️ Limites de la V0.3
 
 - l’accès dépend du plan et de la durée de validité de la clé Electricity Maps ;
 - les horizons 48/72 h peuvent dépendre des droits du plan ;
@@ -263,19 +288,22 @@ Navigateur                       Serveur                      Electricity Maps
 - les prix *day-ahead* ne correspondent pas nécessairement au tarif final facturé ;
 - les puissances des appareils sont des préréglages modifiables, pas des mesures réelles ;
 - le planificateur estime la composante énergie et non la facture complète ;
+- une alerte navigateur nécessite que l’utilisateur accorde la permission ;
+- l’évaluation des alertes se fait lors du chargement ou de l’actualisation de l’application, sans serveur de notifications permanent ;
+- la mesure de précision a besoin d’au moins une prévision conservée localement puis d’un prix publié correspondant ;
 - aucune donnée simulée n’est présentée lorsque l’API est indisponible.
 
-## 🗺️ Pistes pour la V0.3
+## 🗺️ Pistes pour la V0.4
 
-- alertes de prix et notifications PWA ;
 - comparaison de plusieurs zones ;
-- historique et comparaison prévisions/réalité ;
-- heure limite de fin et calendrier des cycles planifiés ;
-- suivi détaillé de recharge électrique.
+- calendrier et file de plusieurs appareils à planifier ensemble ;
+- notifications push côté serveur même lorsque l’application est fermée ;
+- prise en compte d’un tarif contractuel et des taxes ;
+- connexion optionnelle à une borne ou à un compteur compatible.
 
 ---
 
 <div align="center">
-  <strong>Wattwise V0.2</strong><br />
+  <strong>Wattwise V0.3</strong><br />
   Prévisions fournies par Electricity Maps — les prix affichés ne sont pas des tarifs contractuels.
 </div>

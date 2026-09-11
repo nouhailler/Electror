@@ -40,6 +40,8 @@
   --hero-shadow: rgb(28 52 34 / 0.18);
   --card-shadow: rgb(33 54 40 / 0.05);
   --chart-line: #58a8a2;
+  --carbon-line: #7257d6;
+  --renewable-line: #20a96b;
   --price-very-cheap: #20a96b;
   --price-cheap: #73bd65;
   --price-average: #d99a2b;
@@ -62,6 +64,8 @@
   --hero-shadow: rgb(0 0 0 / 0.3);
   --card-shadow: rgb(0 0 0 / 0.14);
   --chart-line: #76c8bd;
+  --carbon-line: #b59cff;
+  --renewable-line: #61d49a;
   --price-very-cheap: #61d49a;
   --price-cheap: #9bd777;
   --price-average: #f0b84a;

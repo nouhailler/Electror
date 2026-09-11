@@ -14,18 +14,32 @@ const STORAGE_KEY = 'wattwise:planner';
 function sanitizePreferences(value: unknown): PlannerPreferences | null {
   if (!value || typeof value !== 'object') return null;
   const candidate = value as Partial<PlannerPreferences>;
+  const merged = { ...DEFAULT_PLANNER_PREFERENCES, ...candidate };
   if (
-    !isApplianceId(candidate.applianceId) ||
-    typeof candidate.durationMinutes !== 'number' ||
-    !DURATION_OPTIONS.some((duration) => duration === candidate.durationMinutes) ||
-    typeof candidate.powerKw !== 'number' ||
-    !Number.isFinite(candidate.powerKw) ||
-    candidate.powerKw < 0.1 ||
-    candidate.powerKw > 22
+    !isApplianceId(merged.applianceId) ||
+    !DURATION_OPTIONS.some((duration) => duration === merged.durationMinutes) ||
+    !Number.isFinite(merged.powerKw) ||
+    merged.powerKw < 0.1 ||
+    merged.powerKw > 22 ||
+    !['economical', 'ecological', 'balanced'].includes(merged.optimizationMode) ||
+    !Number.isFinite(merged.priceWeight) ||
+    merged.priceWeight < 0 ||
+    merged.priceWeight > 100
   ) {
     return null;
   }
-  return candidate as PlannerPreferences;
+  return merged;
+}
+
+function calculateEvDuration(preferences: PlannerPreferences): number {
+  const requestedEnergy =
+    preferences.evBatteryCapacityKwh *
+    Math.max(0, preferences.evTargetPercent - preferences.evCurrentPercent) /
+    100 /
+    0.9;
+  const rawMinutes = (requestedEnergy / Math.max(0.1, preferences.powerKw)) * 60;
+  const rounded = Math.ceil(rawMinutes / 30) * 30;
+  return DURATION_OPTIONS.find((duration) => duration >= rounded) ?? 720;
 }
 
 export function usePlannerPreferences() {
@@ -51,10 +65,16 @@ export function usePlannerPreferences() {
 
   const setApplianceId = (applianceId: ApplianceId) => {
     const preset = getAppliance(applianceId);
-    setPreferences({
-      applianceId,
-      durationMinutes: preset.durationMinutes,
-      powerKw: preset.powerKw,
+    setPreferences((current) => {
+      const next = {
+        ...current,
+        applianceId,
+        durationMinutes: preset.durationMinutes,
+        powerKw: preset.powerKw,
+      };
+      return applianceId === 'electric-car'
+        ? { ...next, durationMinutes: calculateEvDuration(next) }
+        : next;
     });
   };
 
@@ -64,10 +84,15 @@ export function usePlannerPreferences() {
   };
 
   const setPowerKw = (powerKw: number) => {
-    setPreferences((current) => ({
-      ...current,
-      powerKw: Number.isFinite(powerKw) ? Math.min(22, Math.max(0, powerKw)) : 0,
-    }));
+    setPreferences((current) => {
+      const next = {
+        ...current,
+        powerKw: Number.isFinite(powerKw) ? Math.min(22, Math.max(0, powerKw)) : 0,
+      };
+      return next.applianceId === 'electric-car'
+        ? { ...next, durationMinutes: calculateEvDuration(next) }
+        : next;
+    });
   };
 
   const normalizePower = () => {
@@ -77,11 +102,26 @@ export function usePlannerPreferences() {
     }));
   };
 
+  const updatePreferences = (changes: Partial<PlannerPreferences>) => {
+    setPreferences((current) => {
+      const next = { ...current, ...changes };
+      return next.applianceId === 'electric-car' && (
+        changes.powerKw !== undefined ||
+        changes.evBatteryCapacityKwh !== undefined ||
+        changes.evCurrentPercent !== undefined ||
+        changes.evTargetPercent !== undefined
+      )
+        ? { ...next, durationMinutes: calculateEvDuration(next) }
+        : next;
+    });
+  };
+
   return {
     preferences,
     setApplianceId,
     setDurationMinutes,
     setPowerKw,
     normalizePower,
+    updatePreferences,
   };
 }

@@ -51,12 +51,23 @@ export const APPLIANCES: readonly AppliancePreset[] = [
   },
 ] as const;
 
-export const DURATION_OPTIONS = [30, 60, 90, 120, 180, 240, 360, 480] as const;
+export const DURATION_OPTIONS = [30, 60, 90, 120, 180, 240, 360, 480, 600, 720] as const;
 
 export const DEFAULT_PLANNER_PREFERENCES: PlannerPreferences = {
   applianceId: 'washing-machine',
   durationMinutes: 120,
   powerKw: 0.5,
+  optimizationMode: 'balanced',
+  priceWeight: 60,
+  earliestStart: '',
+  latestEnd: '',
+  avoidQuietHours: false,
+  quietStart: '22:00',
+  quietEnd: '07:00',
+  maxHomePowerKw: 9,
+  evBatteryCapacityKwh: 60,
+  evCurrentPercent: 30,
+  evTargetPercent: 80,
 };
 
 export function getAppliance(id: ApplianceId): AppliancePreset {

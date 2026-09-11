@@ -1,6 +1,13 @@
 import type { HorizonHours } from '@/src/types/electricity';
 
-const API_URL = 'https://api.electricitymaps.com/v4/price-day-ahead/forecast';
+const API_ROOT = 'https://api.electricitymaps.com/v4';
+const ENDPOINTS = {
+  price: 'price-day-ahead/combined',
+  carbon: 'carbon-intensity/forecast',
+  renewable: 'renewable-energy/forecast',
+  mix: 'electricity-mix/forecast',
+  priceHistory: 'price-day-ahead/history',
+} as const;
 const ALLOWED_ZONES = new Set(['FR', 'DE', 'BE', 'ES', 'IT-NO', 'NL']);
 const ALLOWED_HORIZONS = new Set<HorizonHours>([24, 48, 72]);
 const CACHE_TTL_MS = 15 * 60 * 1000;
@@ -8,6 +15,12 @@ const RESPONSE_HEADERS = { 'Cache-Control': 'private, max-age=900', 'Content-Typ
 
 interface ServerCacheEntry {
   expiresAt: number;
+  payload: unknown;
+}
+
+interface UpstreamResult {
+  ok: boolean;
+  status: number;
   payload: unknown;
 }
 
@@ -61,24 +74,67 @@ export async function GET(request: Request): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   try {
-    const url = new URL(API_URL);
-    url.searchParams.set('zone', zone);
-    url.searchParams.set('horizonHours', String(horizon));
-    url.searchParams.set('temporalGranularity', 'hourly');
-    url.searchParams.set('disableCallerLookup', 'true');
+    const fetchEndpoint = async (
+      endpoint: string,
+      includeHorizon = true,
+    ): Promise<UpstreamResult> => {
+      const url = new URL(`${API_ROOT}/${endpoint}`);
+      url.searchParams.set('zone', zone);
+      if (includeHorizon) url.searchParams.set('horizonHours', String(horizon));
+      url.searchParams.set('temporalGranularity', 'hourly');
+      url.searchParams.set('disableCallerLookup', 'true');
+      const response = await fetch(url, {
+        headers: { Accept: 'application/json', 'auth-token': apiKey },
+        signal: controller.signal,
+      });
+      return {
+        ok: response.ok,
+        status: response.status,
+        payload: await response.json().catch(() => null),
+      };
+    };
+    const fetchOptionalEndpoint = async (
+      endpoint: string,
+      includeHorizon = true,
+    ): Promise<UpstreamResult> => {
+      try {
+        return await fetchEndpoint(endpoint, includeHorizon);
+      } catch {
+        return { ok: false, status: 0, payload: null };
+      }
+    };
 
-    const response = await fetch(url, {
-      headers: { Accept: 'application/json', 'auth-token': apiKey },
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      const error = messageForStatus(response.status);
-      return errorResponse(response.status, error.code, error.message);
+    const [price, carbon, renewable, mix, priceHistory] = await Promise.all([
+      fetchEndpoint(ENDPOINTS.price),
+      fetchOptionalEndpoint(ENDPOINTS.carbon),
+      fetchOptionalEndpoint(ENDPOINTS.renewable),
+      fetchOptionalEndpoint(ENDPOINTS.mix),
+      fetchOptionalEndpoint(ENDPOINTS.priceHistory, false),
+    ]);
+
+    if (!price.ok) {
+      const error = messageForStatus(price.status);
+      return errorResponse(price.status, error.code, error.message);
     }
-    const payload: unknown = await response.json();
-    if (!payload || typeof payload !== 'object' || !Array.isArray((payload as { data?: unknown }).data)) {
+    if (
+      !price.payload ||
+      typeof price.payload !== 'object' ||
+      !Array.isArray((price.payload as { data?: unknown }).data)
+    ) {
       return errorResponse(502, 'INVALID_RESPONSE', 'Electricity Maps a renvoyé une réponse incomplète.');
     }
+
+    const optionalSignals = { carbon, renewable, mix, priceHistory };
+    const payload = {
+      price: price.payload,
+      carbon: carbon.ok ? carbon.payload : null,
+      renewable: renewable.ok ? renewable.payload : null,
+      mix: mix.ok ? mix.payload : null,
+      priceHistory: priceHistory.ok ? priceHistory.payload : null,
+      unavailableSignals: Object.entries(optionalSignals)
+        .filter(([, result]) => !result.ok)
+        .map(([name]) => name),
+    };
     cache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, payload });
     return Response.json(payload, { headers: RESPONSE_HEADERS });
   } catch (error) {

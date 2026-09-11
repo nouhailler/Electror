@@ -20,6 +20,12 @@ describe('consumptionPlanner', () => {
     expect(estimate?.estimatedCost).toBeCloseTo(0.2);
     expect(estimate?.referenceCost).toBeCloseTo(0.32);
     expect(estimate?.savings).toBeCloseTo(0.12);
+    expect(estimate?.carbonKg).toBeNull();
+  });
+
+  it('estime aussi l’impact carbone quand le signal est disponible', () => {
+    const estimate = calculateConsumptionEstimate(window, 80, 2, 125);
+    expect(estimate?.carbonKg).toBeCloseTo(0.5);
   });
 
   it('refuse une puissance nulle ou invalide', () => {

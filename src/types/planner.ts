@@ -1,3 +1,5 @@
+import type { PriceWindow } from '@/src/types/electricity';
+
 export type ApplianceId =
   | 'washing-machine'
   | 'dishwasher'
@@ -5,6 +7,8 @@ export type ApplianceId =
   | 'water-heater'
   | 'electric-car'
   | 'custom';
+
+export type OptimizationMode = 'economical' | 'ecological' | 'balanced';
 
 export interface AppliancePreset {
   id: ApplianceId;
@@ -19,6 +23,17 @@ export interface PlannerPreferences {
   applianceId: ApplianceId;
   durationMinutes: number;
   powerKw: number;
+  optimizationMode: OptimizationMode;
+  priceWeight: number;
+  earliestStart: string;
+  latestEnd: string;
+  avoidQuietHours: boolean;
+  quietStart: string;
+  quietEnd: string;
+  maxHomePowerKw: number;
+  evBatteryCapacityKwh: number;
+  evCurrentPercent: number;
+  evTargetPercent: number;
 }
 
 export interface ConsumptionEstimate {
@@ -28,4 +43,14 @@ export interface ConsumptionEstimate {
   estimatedCost: number;
   referenceCost: number;
   savings: number;
+  carbonKg: number | null;
+}
+
+export interface OptimizedWindow extends PriceWindow {
+  mode: OptimizationMode;
+  score: number;
+  averageCarbon: number | null;
+  averageRenewable: number | null;
+  estimatedCarbonKg: number | null;
+  explanation: string;
 }

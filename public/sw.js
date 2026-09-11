@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wattwise-shell-v2';
+const CACHE_NAME = 'wattwise-shell-v3';
 const APP_SHELL = ['/', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -40,5 +40,16 @@ self.addEventListener('fetch', (event) => {
         return response;
       }),
     ),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url ?? '/#alertes';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      const existing = clients.find((client) => 'focus' in client);
+      return existing ? existing.focus() : self.clients.openWindow(target);
+    }),
   );
 });

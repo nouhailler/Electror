@@ -1,5 +1,5 @@
-import { mapForecastResponse } from '@/src/services/forecastMapper';
-import type { ApiErrorPayload, Forecast, HorizonHours } from '@/src/types/electricity';
+import { mapEnergyResponse } from '@/src/services/forecastMapper';
+import type { ApiErrorPayload, EnergyData, HorizonHours } from '@/src/types/electricity';
 
 export class ForecastRequestError extends Error {
   code: string;
@@ -15,7 +15,7 @@ export async function fetchForecast(
   zoneId: string,
   horizon: HorizonHours,
   signal?: AbortSignal,
-): Promise<Forecast> {
+): Promise<EnergyData> {
   let response: Response;
   try {
     response = await fetch(
@@ -38,5 +38,5 @@ export async function fetchForecast(
       apiError?.code ?? `HTTP_${response.status}`,
     );
   }
-  return mapForecastResponse(payload);
+  return mapEnergyResponse(payload);
 }

@@ -5,6 +5,7 @@ export function calculateConsumptionEstimate(
   window: PriceWindow,
   referencePricePerMWh: number,
   powerKw: number,
+  averageCarbonGramsPerKwh: number | null = null,
 ): ConsumptionEstimate | null {
   if (
     !Number.isFinite(referencePricePerMWh) ||
@@ -26,6 +27,9 @@ export function calculateConsumptionEstimate(
     estimatedCost,
     referenceCost,
     savings: Math.max(0, referenceCost - estimatedCost),
+    carbonKg: averageCarbonGramsPerKwh === null
+      ? null
+      : averageCarbonGramsPerKwh * energyKwh / 1_000,
   };
 }
 
