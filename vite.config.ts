@@ -35,6 +35,17 @@ const localBindingConfig = {
 };
 
 export default defineConfig(async () => {
+  // Vercel needs a Nitro server function, not the Cloudflare Worker output.
+  // Keep the existing local/Sites workflow unless a Nitro target is requested.
+  if (process.env.VERCEL === '1' || process.env.NITRO_PRESET) {
+    const { nitro } = await import('nitro/vite');
+    const { default: tailwindVite } = await import('@tailwindcss/vite');
+    return {
+      optimizeDeps: { exclude: ['lucide-react'] },
+      plugins: [vinext(), tailwindVite(), nitro()],
+    };
+  }
+
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= 'false';

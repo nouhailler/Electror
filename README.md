@@ -117,7 +117,7 @@ L’optimiseur construit les fenêtres contiguës compatibles avec la durée, le
 
 ### Prérequis
 
-- [Node.js](https://nodejs.org/) **22.13 ou supérieur**
+- [Node.js](https://nodejs.org/) **22.x**, version 22.13 ou supérieure
 - une clé API [Electricity Maps](https://app.electricitymaps.com/)
 
 ### 1. Cloner et installer
@@ -125,7 +125,7 @@ L’optimiseur construit les fenêtres contiguës compatibles avec la durée, le
 ```bash
 git clone https://github.com/nouhailler/Electror.git
 cd Electror
-npm install
+npm ci
 ```
 
 ### 2. Configurer l’API
@@ -151,6 +151,36 @@ npm run dev
 ```
 
 Ouvrez [http://localhost:3000](http://localhost:3000).
+
+## ☁️ Déployer sur Vercel
+
+Le fichier `vercel.json` sélectionne le build Nitro dédié à Vercel :
+
+- commande : `npm run build:vercel` ;
+- framework : `Other` (et non `Vite` ou `Next.js`) ;
+- ressources statiques : `.vercel/output/static` ;
+- serveur : `.vercel/output/functions/__server.func`, en Node.js 22.
+
+Nitro génère les règles Vercel pour envoyer les pages et `/api/forecast` au serveur.
+Il ne faut pas déployer uniquement `dist/client` : cela supprimerait le serveur et provoquerait un 404.
+
+Dans **Project Settings → Environment Variables**, ajouter :
+
+```dotenv
+ELECTRICITY_MAPS_API_KEY=votre_cle
+NEXT_PUBLIC_SITE_URL=https://electror.vercel.app
+```
+
+Activer les variables pour **Production**, et pour **Preview** si les aperçus doivent accéder à l’API.
+Le fichier `.env` local n’est pas envoyé à Vercel. Après avoir poussé les modifications sur la branche
+de production, attendre le nouveau déploiement ; après un changement de variables, redéployer.
+Le résumé du déploiement doit inclure une **fonction serveur**, pas seulement `Static Assets`.
+
+```bash
+npm run test:vercel # construit et vérifie le serveur Vercel, les pages, les assets et l’API
+```
+
+Le lancement local `npm run dev` et le build Cloudflare `npm run build` restent disponibles.
 
 ## 📲 Installer la PWA
 
@@ -204,6 +234,10 @@ src/
 ├── test/fixtures/              # Réponses réalistes sans appel réseau
 ├── types/                      # Modèles API et métier
 └── utils/                      # Formatage localisé
+scripts/
+└── check-vercel-output.mjs     # Vérification du build Vercel sans appel API externe
+vercel.json                    # Installation et build Vercel
+vite.config.ts                 # Sélection du build Cloudflare ou Nitro
 public/
 ├── icon.svg
 ├── manifest.webmanifest
@@ -235,15 +269,17 @@ flowchart TD
 | Graphiques | Recharts |
 | Tests | Vitest |
 | PWA | Manifest Web App, service worker, cache local |
-| Hébergement | Sortie ESM compatible Cloudflare Workers |
+| Hébergement | Vercel via Nitro (Node.js 22), ou Cloudflare Workers |
 
 ## ✅ Qualité et tests
 
 ```bash
-npm test          # tests métier
-npm run typecheck # validation TypeScript
-npm run lint      # qualité et accessibilité statique
-npm run build     # build de production
+npm test             # tests métier
+npm run typecheck    # validation TypeScript
+npm run lint         # qualité et accessibilité statique
+npm run build        # build de production Cloudflare
+npm run build:vercel # build de production Vercel
+npm run test:vercel  # build Vercel et vérification de la sortie générée
 ```
 
 Les tests couvrent notamment :
@@ -261,6 +297,11 @@ Les tests couvrent notamment :
 - les seuils d’alertes prix, carbone et renouvelables ;
 - le prochain pic ;
 - la classification relative des prix.
+
+Le contrôle `test:vercel` vérifie le routage vers la fonction Node.js 22, le rendu
+de l’accueil, la présence des ressources statiques et les réponses de `/api/forecast`
+(paramètres invalides, clé absente et succès). Les cinq flux Electricity Maps sont
+simulés pour le scénario de succès : aucune clé réelle ni requête externe n’est nécessaire.
 
 ## 🔐 Sécurité
 
