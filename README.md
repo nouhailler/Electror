@@ -11,7 +11,7 @@
     <img alt="React 19" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=082032" />
     <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white" />
     <img alt="PWA" src="https://img.shields.io/badge/PWA-installable-C8F04B?logo=pwa&logoColor=17241C" />
-    <img alt="Tests" src="https://img.shields.io/badge/tests-21%20passed-20A96B" />
+    <img alt="Tests" src="https://img.shields.io/badge/tests-27%20passed-20A96B" />
     <img alt="Version" src="https://img.shields.io/badge/version-0.3-C8F04B" />
   </p>
 </div>
@@ -60,6 +60,10 @@ L’application récupère les prévisions *day-ahead* d’[Electricity Maps](ht
 
 ## ✨ Fonctionnalités
 
+- ❓ **Guide intégré** depuis le bouton « ? » : premiers pas, estimations et FAQ sur les alertes et les données
+- 💬 **Explications contextuelles** : prix publié ou prévu, gCO₂e/kWh, renouvelable et bas carbone
+- 🧩 **Contraintes expliquées** : raison de l’absence de créneau et suggestion adaptée
+- 🚗 **Objectif de recharge vérifié** : cible déjà atteinte ou durée supérieure à 12 h signalée, sans recommandation de recharge incomplète
 - 🌍 **Six zones européennes** : France, Allemagne, Belgique, Espagne, Italie du Nord et Pays-Bas
 - 🕐 **Prix publiés et prévus sur 24 h, 48 h et 72 h** lorsque le plan API les autorise
 - ⚖️ **Trois modes d’optimisation** : économique, écologique ou équilibré avec pondération réglable
@@ -94,6 +98,17 @@ flowchart LR
 
 La barre inférieure donne un accès direct à **Accueil**, **Planifier**, **Prévisions**, **Impact** et **Alertes**. Les préférences générales restent disponibles en bas du tableau de bord.
 
+Le bouton **« ? »** de l’en-tête ouvre le guide, même lorsque les données sont indisponibles.
+Il explique les réglages, les unités, les limites des estimations et le fonctionnement des notifications.
+Le guide se ferme avec **Fermer** ou la touche **Échap**.
+
+Si aucun créneau n’est possible, le tableau de bord précise la cause : puissance dépassée,
+données futures insuffisantes, durée non couverte, heures silencieuses ou horaires incompatibles.
+Pour la voiture électrique, le calcul suppose un rendement de 90 %. Une recharge nécessitant
+plus de 12 h affiche la durée estimée et le niveau atteignable en 12 h ; elle ne produit pas de
+créneau présenté comme suffisant pour atteindre la cible. Une cible déjà atteinte ne déclenche
+pas de recommandation de recharge.
+
 ## 🧠 Comment les recommandations sont calculées
 
 Wattwise n’utilise pas de seuils monétaires arbitraires. Chaque prix est comparé aux autres valeurs de la période affichée grâce à des **quintiles**.
@@ -112,6 +127,7 @@ L’optimiseur construit les fenêtres contiguës compatibles avec la durée, le
 
 > [!NOTE]
 > Cette estimation ne représente que la composante énergie au prix de gros. Elle n’inclut ni les taxes, ni le réseau, ni les conditions du contrat d’électricité.
+> Avec un contrat à prix fixe, déplacer un cycle ne réduit pas forcément la facture.
 
 ## 🚀 Installation
 
@@ -172,6 +188,9 @@ NEXT_PUBLIC_SITE_URL=https://electror.vercel.app
 ```
 
 Activer les variables pour **Production**, et pour **Preview** si les aperçus doivent accéder à l’API.
+Utiliser le type **Secret** pour `ELECTRICITY_MAPS_API_KEY` et **Config** pour
+`NEXT_PUBLIC_SITE_URL`. Si cette dernière a déjà été enregistrée comme secret, la supprimer
+puis la recréer comme Config ; conserver la clé API en Secret.
 Le fichier `.env` local n’est pas envoyé à Vercel. Après avoir poussé les modifications sur la branche
 de production, attendre le nouveau déploiement ; après un changement de variables, redéployer.
 Le résumé du déploiement doit inclure une **fonction serveur**, pas seulement `Static Assets`.
@@ -292,6 +311,8 @@ Les tests couvrent notamment :
 - le coût et l’économie estimés d’un cycle d’appareil ;
 - l’empreinte carbone estimée ;
 - les modes d’optimisation et les contraintes horaires ;
+- les diagnostics de puissance, durée, horaires et silence ;
+- les cibles de recharge réalisables, déjà atteintes ou dépassant 12 h ;
 - le regroupement des cinq flux Electricity Maps ;
 - la qualité des prévisions comparée aux prix publiés ;
 - les seuils d’alertes prix, carbone et renouvelables ;
@@ -341,6 +362,11 @@ Navigateur                       Serveur                      Electricity Maps
 - notifications push côté serveur même lorsque l’application est fermée ;
 - prise en compte d’un tarif contractuel et des taxes ;
 - connexion optionnelle à une borne ou à un compteur compatible.
+
+## Documentation du projet
+
+- [CONTEXT.md](./CONTEXT.md) : architecture, état du projet et points d’attention pour la maintenance.
+- [CHANGELOG.md](./CHANGELOG.md) : historique des évolutions.
 
 ---
 

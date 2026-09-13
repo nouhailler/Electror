@@ -62,6 +62,7 @@ export function EnergyInsights({ data, bestWindow }: { data: EnergyData; bestWin
           <InsightMetric icon={ShieldCheck} label="Données" value={`${actualCount} publiées`} note={`${forecastCount} prévues`} />
         </div>
 
+        <p className="mt-3 text-xs leading-5 text-muted-foreground">gCO₂e/kWh : grammes de gaz à effet de serre, en équivalent CO₂, par kilowattheure. Un chiffre bas signifie moins d’émissions. Le renouvelable indique la part issue de sources renouvelables ; le nucléaire est bas carbone mais non renouvelable.</p>
         <div className="mt-6 rounded-2xl bg-muted/55 p-4">
           <div className="flex items-center justify-between gap-3">
             <p className="flex items-center gap-2 text-sm font-black"><Wind className="size-4 text-accent-blue" aria-hidden /> Mix au début du créneau</p>

@@ -1,4 +1,5 @@
 import { calculateStatistics } from '@/src/services/priceAnalysis';
+import { rechargeWarning } from '@/src/services/plannerHelp';
 import type { PricePoint, SignalPoint, SignalSeries } from '@/src/types/electricity';
 import type { OptimizedWindow, PlannerPreferences } from '@/src/types/planner';
 
@@ -189,6 +190,7 @@ export function findOptimizedWindow(
   preferences: PlannerPreferences,
   now = Date.now(),
 ): OptimizedWindow | null {
+  if (rechargeWarning(preferences)) return null;
   const candidates = buildCandidates(pricePoints, carbon, renewable, preferences, now);
   if (candidates.length === 0) return null;
 
@@ -246,4 +248,16 @@ export function findOptimizedWindow(
       : candidate.averageCarbon * energyKwh / 1_000,
     explanation,
   };
+}
+
+export function explainUnavailableWindow(points: PricePoint[], p: PlannerPreferences, now = Date.now()): string {
+  const recharge = rechargeWarning(p);
+  if (recharge) return recharge;
+  if (!Number.isFinite(p.powerKw) || p.powerKw <= 0) return 'La puissance doit être supérieure à zéro. Renseignez la puissance moyenne réelle de l’appareil.';
+  if (p.powerKw > p.maxHomePowerKw) return `L’appareil demande ${p.powerKw} kW, au-dessus de la limite du logement (${p.maxHomePowerKw} kW). Réduisez sa puissance si possible ou vérifiez la limite réelle de votre installation.`;
+  if (!points.some((point) => Date.parse(point.datetime) >= now)) return 'Il ne reste aucune donnée future. Actualisez les prévisions ou sélectionnez un autre horizon.';
+  const unrestricted = { ...p, earliestStart: '', latestEnd: '', avoidQuietHours: false };
+  if (buildCandidates(points, null, null, unrestricted, now).length === 0) return 'Les données continues disponibles ne couvrent pas toute la durée du cycle. Choisissez un horizon plus long, actualisez les données ou réduisez la durée si votre appareil le permet.';
+  if (p.avoidQuietHours && buildCandidates(points, null, null, { ...p, avoidQuietHours: false }, now).length > 0) return 'Les heures silencieuses excluent tous les créneaux compatibles avec vos horaires. Ajustez la plage de silence ou élargissez les horaires autorisés.';
+  return 'La durée du cycle ne tient pas dans les horaires autorisés avec les contraintes actuelles. Avancez le début autorisé, repoussez la fin ou réduisez la durée si possible. Les horaires utilisent le fuseau de votre appareil.';
 }

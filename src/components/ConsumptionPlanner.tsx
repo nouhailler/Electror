@@ -27,6 +27,7 @@ import {
 } from '@/src/utils/format';
 
 interface ConsumptionPlannerProps {
+  unavailableReason?: string;
   preferences: PlannerPreferences;
   bestWindow: OptimizedWindow | null;
   referencePrice: number;
@@ -54,6 +55,7 @@ export function ConsumptionPlanner({
   onPowerChange,
   onPowerBlur,
   onPreferencesChange,
+  unavailableReason,
 }: ConsumptionPlannerProps) {
   const selectedAppliance = getAppliance(preferences.applianceId);
   const estimate = bestWindow
@@ -154,7 +156,7 @@ export function ConsumptionPlanner({
             ))}
           </NativeSelect>
           <span className="mt-2 block text-xs text-muted-foreground">
-            {preferences.applianceId === 'electric-car' ? 'Calculée depuis la batterie cible' : 'De 30 minutes à 12 heures'}
+            {preferences.applianceId === 'electric-car' ? 'Durée arrondie, limitée à 12 h. Consultez le résultat pour savoir si la cible est réalisable.' : 'De 30 minutes à 12 heures'}
           </span>
         </label>
 
@@ -238,9 +240,10 @@ export function ConsumptionPlanner({
         </div>
       ) : (
         <output className="mt-6 block rounded-2xl border border-warning/25 bg-warning/10 p-5 text-sm">
-          Aucun créneau ne respecte toutes les contraintes. Vérifiez la durée, la plage horaire et la puissance du logement.
+          {unavailableReason ?? 'Aucun créneau ne respecte les contraintes. Vérifiez la durée et les horaires.'}
         </output>
       )}
+      <p className="mt-4 text-xs leading-5 text-muted-foreground">Coût et économie estimés au prix de gros, hors taxes, réseau et abonnement. Avec un contrat à prix fixe, décaler ce cycle ne réduit pas forcément votre facture. L’empreinte en kg CO₂e estime les émissions du cycle complet.</p>
     </section>
   );
 }

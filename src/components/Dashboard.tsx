@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { AlertCenter } from '@/src/components/AlertCenter';
+import { HelpGuide } from '@/src/components/HelpGuide';
 import { ConsumptionPlanner } from '@/src/components/ConsumptionPlanner';
 import { EnergyInsights } from '@/src/components/EnergyInsights';
 import { ForecastSkeleton } from '@/src/components/ForecastSkeleton';
@@ -33,7 +34,7 @@ import { useForecast } from '@/src/hooks/useForecast';
 import { useEnergyAlerts } from '@/src/hooks/useEnergyAlerts';
 import { usePlannerPreferences } from '@/src/hooks/usePlannerPreferences';
 import { analyzeForecast } from '@/src/services/priceAnalysis';
-import { findOptimizedWindow } from '@/src/services/smartOptimizer';
+import { explainUnavailableWindow, findOptimizedWindow } from '@/src/services/smartOptimizer';
 import type { HorizonHours } from '@/src/types/electricity';
 import { formatDateTime, formatHour, formatPeriod, formatPrice, formatShortDate, relativeUpdateTime } from '@/src/utils/format';
 
@@ -169,6 +170,7 @@ export function Dashboard() {
             <span className="text-lg font-extrabold tracking-[-0.035em]">Wattwise</span>
           </a>
           <div className="flex items-center gap-2">
+            <HelpGuide />
             {!online && <span className="hidden items-center gap-1.5 rounded-full bg-danger/10 px-3 py-2 text-xs font-bold text-danger sm:flex"><WifiOff className="size-3.5" /> Hors ligne</span>}
             <button
               onClick={() => setTheme(nextTheme)}
@@ -247,7 +249,7 @@ export function Dashboard() {
                           Consommez entre {formatPeriod(optimizedWindow.start, optimizedWindow.end)}. Le planificateur tient compte du prix, de l’impact carbone et de toutes vos contraintes.
                         </p>
                       </>
-                    ) : <h2 className="text-3xl font-black">Pas assez de données pour calculer un créneau.</h2>}
+                    ) : <div><h2 className="text-3xl font-black">Aucun créneau recommandé</h2><p className="mt-3 text-sm leading-6 text-white/65">{explainUnavailableWindow(forecast.points, planner.preferences)}</p></div>}
                   </div>
                   {optimizedWindow && (
                     <div className="rounded-3xl border border-white/10 bg-white/7 p-5 backdrop-blur-sm">
@@ -266,6 +268,7 @@ export function Dashboard() {
               <ConsumptionPlanner
                 preferences={planner.preferences}
                 bestWindow={optimizedWindow}
+                unavailableReason={optimizedWindow ? undefined : explainUnavailableWindow(forecast.points, planner.preferences)}
                 referencePrice={analysis.statistics.average}
                 unit={forecast.unit}
                 onApplianceChange={planner.setApplianceId}

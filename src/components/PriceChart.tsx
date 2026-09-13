@@ -91,6 +91,7 @@ export function PriceChart({ points, statistics, unit, carbon, renewable, bestWi
         <span className="ml-auto rounded-full bg-muted px-3 py-1.5">{unit}</span>
       </div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
+        <p className="w-full text-xs leading-5 text-muted-foreground">Prix publié : valeur annoncée par le marché. Prix prévu : estimation modélisée susceptible d’évoluer. Aucun des deux ne représente nécessairement votre tarif facturé.</p>
         <span className="text-xs font-bold text-muted-foreground">Superposer :</span>
         {(['carbon', 'renewable'] as const).map((value) => (
           <button
